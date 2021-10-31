@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Layout from "../components/Layout";
 import { gql, useQuery, useMutation } from "@apollo/client";
 import { PlusCircleIcon } from "@heroicons/react/outline";
@@ -6,13 +6,13 @@ import { Digital } from "react-activity";
 import "react-activity/dist/Digital.css";
 import Link from "next/link";
 import {
-  ChevronLeftIcon,
-  ChevronRightIcon,
   ArrowNarrowLeftIcon,
   ArrowNarrowRightIcon,
 } from "@heroicons/react/outline";
 
 import Cliente from "../components/Cliente";
+import ReactPaginate from "react-paginate";
+
 //obtener clientes
 const OBTENER_CLIENTES_USUARIO = gql`
   query obtenerClientesVendedor {
@@ -29,10 +29,47 @@ const OBTENER_CLIENTES_USUARIO = gql`
 `;
 
 export default function Clientes() {
-  // function classNames(...classes) {
-  //   return classes.filter(Boolean).join(" ");
-  // }
+  const [offset, setOffset] = useState(0);
+  const [dataPagination, setDataPagination] = useState([]);
+  const [perPage] = useState(10);
+  const [pageCount, setPageCount] = useState(0);
+
   const { data, loading, error } = useQuery(OBTENER_CLIENTES_USUARIO);
+
+  const getData = (data) => {
+    if (data && data.obtenerClientesVendedor !== null) {
+      let postData;
+
+      if (data.obtenerClientesVendedor.length === 0) {
+        postData = (
+          <tr className="bg-white">
+            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 items-center w-full">
+              No existen clientes para mostrar...
+            </td>
+          </tr>
+        );
+        setPageCount(0);
+      } else {
+        //Existen Datos
+        const slice = data.obtenerClientesVendedor.slice(
+          offset,
+          offset + perPage
+        );
+
+        postData = slice.map((cliente, clienteIdx) => (
+          <Cliente key={cliente.id} cliente={cliente} clienteIdx={clienteIdx} />
+        ));
+
+        setPageCount(Math.ceil(data.obtenerClientesVendedor.length / perPage));
+      }
+      setDataPagination(postData);
+    }
+  };
+
+  useEffect(() => {
+    getData(data);
+  }, [offset, loading, data]);
+
   if (loading) {
     return (
       <Layout>
@@ -45,35 +82,10 @@ export default function Clientes() {
     );
   }
 
-  let mostrarElementos;
-
-  // if (data.obtenerClientesVendedor === null) {
-  //   mostrarElementos = (
-  //     <tr className="bg-white">
-  //       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 items-center w-full">
-  //         Hubo un error al cargar los registros. Actualice la página.
-  //       </td>
-  //     </tr>
-  //   );
-  // }
-
-  if (data && data.obtenerClientesVendedor !== null) {
-    if (data.obtenerClientesVendedor.length === 0) {
-      mostrarElementos = (
-        <tr className="bg-white">
-          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 items-center w-full">
-            No existen datos para mostrar...
-          </td>
-        </tr>
-      );
-    } else {
-      mostrarElementos = data.obtenerClientesVendedor.map(
-        (cliente, clienteIdx) => (
-          <Cliente key={cliente.id} cliente={cliente} clienteIdx={clienteIdx} />
-        )
-      );
-    }
-  }
+  const handlePageClick = (e) => {
+    const selectedPage = e.selected;
+    setOffset(selectedPage * perPage);
+  };
 
   return (
     <>
@@ -143,170 +155,56 @@ export default function Clientes() {
                         </th>
                       </tr>
                     </thead>
-                    <tbody>{mostrarElementos}</tbody>
+                    <tbody>{dataPagination}</tbody>
                   </table>
-
-                  <nav className="border-t border-gray-200 px-4 m-4 flex items-center justify-between sm:px-0">
-                    <div className="-mt-px w-0 flex-1 flex">
-                      <a
-                        href="#"
-                        className="border-t-2 border-transparent pt-4 pr-1 inline-flex items-center text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                      >
-                        <ArrowNarrowLeftIcon
-                          className="mr-3 h-5 w-5 text-gray-400"
-                          aria-hidden="true"
-                        />
-                        Anterior
-                      </a>
-                    </div>
-                    <div className="hidden md:-mt-px md:flex">
-                      <a
-                        href="#"
-                        className="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 border-t-2 pt-4 px-4 inline-flex items-center text-sm font-medium"
-                      >
-                        1
-                      </a>
-                      {/* Current: "border-indigo-500 text-indigo-600", Default: "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" */}
-                      <a
-                        href="#"
-                        className="border-indigo-500 text-indigo-600 border-t-2 pt-4 px-4 inline-flex items-center text-sm font-medium"
-                        aria-current="page"
-                      >
-                        2
-                      </a>
-                      <a
-                        href="#"
-                        className="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 border-t-2 pt-4 px-4 inline-flex items-center text-sm font-medium"
-                      >
-                        3
-                      </a>
-                      <span className="border-transparent text-gray-500 border-t-2 pt-4 px-4 inline-flex items-center text-sm font-medium">
-                        ...
-                      </span>
-                      <a
-                        href="#"
-                        className="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 border-t-2 pt-4 px-4 inline-flex items-center text-sm font-medium"
-                      >
-                        8
-                      </a>
-                      <a
-                        href="#"
-                        className="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 border-t-2 pt-4 px-4 inline-flex items-center text-sm font-medium"
-                      >
-                        9
-                      </a>
-                      <a
-                        href="#"
-                        className="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 border-t-2 pt-4 px-4 inline-flex items-center text-sm font-medium"
-                      >
-                        10
-                      </a>
-                    </div>
-                    <div className="-mt-px w-0 flex-1 flex justify-end">
-                      <a
-                        href="#"
-                        className="border-t-2 border-transparent pt-4 pl-1 inline-flex items-center text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                      >
-                        Siguiente
-                        <ArrowNarrowRightIcon
-                          className="ml-3 h-5 w-5 text-gray-400"
-                          aria-hidden="true"
-                        />
-                      </a>
-                    </div>
-                  </nav>
-                  {/* <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-                    <div className="flex-1 flex justify-between sm:hidden">
-                      <a
-                        href="#"
-                        className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-                      >
-                        Previous
-                      </a>
-                      <a
-                        href="#"
-                        className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-                      >
-                        Next
-                      </a>
-                    </div>
-                    <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                      <div>
-                        <p className="text-sm text-gray-700">
-                          Showing <span className="font-medium">1</span> to{" "}
-                          <span className="font-medium">10</span> of{" "}
-                          <span className="font-medium">97</span> results
-                        </p>
-                      </div>
-                      <div>
-                        <nav
-                          className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
-                          aria-label="Pagination"
-                        >
-                          <a
-                            href="#"
-                            className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-                          >
-                            <span className="sr-only">Previous</span>
-                            <ChevronLeftIcon
-                              className="h-5 w-5"
-                              aria-hidden="true"
-                            />
-                          </a>
-                           <a
-                            href="#"
-                            aria-current="page"
-                            className="z-10 bg-indigo-50 border-indigo-500 text-indigo-600 relative inline-flex items-center px-4 py-2 border text-sm font-medium"
-                          >
-                            1
-                          </a>
-                          <a
-                            href="#"
-                            className="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium"
-                          >
-                            2
-                          </a>
-                          <a
-                            href="#"
-                            className="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 hidden md:inline-flex relative items-center px-4 py-2 border text-sm font-medium"
-                          >
-                            3
-                          </a>
-                          <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
-                            ...
-                          </span>
-                          <a
-                            href="#"
-                            className="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 hidden md:inline-flex relative items-center px-4 py-2 border text-sm font-medium"
-                          >
-                            8
-                          </a>
-                          <a
-                            href="#"
-                            className="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium"
-                          >
-                            9
-                          </a>
-                          <a
-                            href="#"
-                            className="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium"
-                          >
-                            10
-                          </a>
-                          <a
-                            href="#"
-                            className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-                          >
-                            <span className="sr-only">Next</span>
-                            <ChevronRightIcon
-                              className="h-5 w-5"
-                              aria-hidden="true"
-                            />
-                          </a>
-                        </nav>
-                      </div>
-                    </div>
-                  </div> */}
+                  {pageCount === 0 || pageCount === 1 ? (
+                    <></>
+                  ) : (
+                    <ReactPaginate
+                      previousLabel={
+                        <>
+                          <ArrowNarrowLeftIcon
+                            className="mr-3 h-5 w-5 text-gray-400"
+                            aria-hidden="true"
+                          />
+                          Anterior
+                        </>
+                      }
+                      nextLabel={
+                        <>
+                          Siguiente
+                          <ArrowNarrowRightIcon
+                            className="ml-3 h-5 w-5 text-gray-400"
+                            aria-hidden="true"
+                          />
+                        </>
+                      }
+                      breakLabel={"..."}
+                      // breakClassName={"break-me"}
+                      pageCount={pageCount}
+                      marginPagesDisplayed={4}
+                      pageRangeDisplayed={3}
+                      onPageChange={handlePageClick}
+                      containerClassName={
+                        "border-t border-gray-200 px-4 m-4 flex items-center justify-between sm:px-0"
+                      }
+                      previousClassName={"-mt-px w-0 flex-1 flex"}
+                      previousLinkClassName={
+                        "border-t-2 border-transparent pt-4 pr-1 inline-flex items-center text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                      }
+                      pageClassName={"hidden md:-mt-px md:flex"}
+                      pageLinkClassName={
+                        "border-transparent text-gray-500 hover:text-indigo-600 hover:border-indigo-300 border-t-2 pt-4 px-4 inline-flex items-center text-sm font-medium"
+                      }
+                      nextClassName={"-mt-px w-0 flex-1 flex justify-end"}
+                      nextLinkClassName={
+                        "border-t-2 border-transparent pt-4 pl-1 inline-flex items-center text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                      }
+                      activeLinkClassName={
+                        "border-indigo-500 text-indigo-700 border-t-2 pt-4 px-4 inline-flex items-center text-sm font-medium"
+                      }
+                    />
+                  )}
                 </div>
               </div>
             </div>

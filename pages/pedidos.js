@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Layout from "../components/Layout";
 import Link from "next/link";
 import { useFormik } from "formik";
@@ -10,6 +10,12 @@ import MensajeAlert from "../components/MensajeAlert";
 import { Digital } from "react-activity";
 import "react-activity/dist/Digital.css";
 import Pedido from "../components/Pedido";
+
+import {
+  ArrowNarrowLeftIcon,
+  ArrowNarrowRightIcon,
+} from "@heroicons/react/outline";
+import ReactPaginate from "react-paginate";
 
 const OBTENER_PEDIDOS = gql`
   query obtenerPedidosByVendedor {
@@ -35,7 +41,51 @@ const OBTENER_PEDIDOS = gql`
 `;
 
 export default function Pedidos() {
+  const [offset, setOffset] = useState(0);
+  const [dataPagination, setDataPagination] = useState([]);
+  const [perPage] = useState(8);
+  const [pageCount, setPageCount] = useState(0);
+
   const { data, loading, error } = useQuery(OBTENER_PEDIDOS);
+
+  const getData = (data) => {
+    if (data && data.obtenerPedidosByVendedor !== null) {
+      let postData;
+
+      if (data.obtenerPedidosByVendedor.length === 0) {
+        postData = (
+          <h2 className="text-gray-500 text-xs text-center font-medium tracking-wide">
+            No existen pedidos para mostrar...
+          </h2>
+        );
+        setPageCount(0);
+      } else {
+        //Existen Datos
+        const slice = data.obtenerPedidosByVendedor.slice(
+          offset,
+          offset + perPage
+        );
+
+        postData = (
+          <>
+            <h2 className="text-gray-500 text-xm text-start font-medium tracking-wide">
+              Total de Pedidos: {data.obtenerPedidosByVendedor.length}
+            </h2>
+            {slice.map((pedido) => (
+              <Pedido key={pedido.id} pedido_unic={pedido} />
+            ))}
+          </>
+        );
+
+        setPageCount(Math.ceil(data.obtenerPedidosByVendedor.length / perPage));
+      }
+      setDataPagination(postData);
+    }
+  };
+
+  useEffect(() => {
+    getData(data);
+  }, [offset, loading, data]);
 
   if (loading) {
     return (
@@ -49,8 +99,13 @@ export default function Pedidos() {
     );
   }
 
-  const { obtenerPedidosByVendedor } = data;
-  console.log(obtenerPedidosByVendedor);
+  const handlePageClick = (e) => {
+    const selectedPage = e.selected;
+    setOffset(selectedPage * perPage);
+  };
+
+  //const { obtenerPedidosByVendedor } = data;
+  //console.log(obtenerPedidosByVendedor);
   return (
     <>
       <Layout>
@@ -79,14 +134,55 @@ export default function Pedidos() {
           </div>
         </div>
         <div className="px-4 mt-6 sm:px-6 lg:px-8">
-          {obtenerPedidosByVendedor.length === 0 ? (
-            <h2 className="text-gray-500 text-xs text-center font-medium tracking-wide">
-              No existen pedidos aún...
-            </h2>
+          {dataPagination}
+
+          {pageCount === 0 || pageCount === 1 ? (
+            <></>
           ) : (
-            obtenerPedidosByVendedor.map((pedido) => (
-              <Pedido key={pedido.id} pedido_unic={pedido} />
-            ))
+            <ReactPaginate
+              previousLabel={
+                <>
+                  <ArrowNarrowLeftIcon
+                    className="mr-3 h-5 w-5 text-gray-400"
+                    aria-hidden="true"
+                  />
+                  Anterior
+                </>
+              }
+              nextLabel={
+                <>
+                  Siguiente
+                  <ArrowNarrowRightIcon
+                    className="ml-3 h-5 w-5 text-gray-400"
+                    aria-hidden="true"
+                  />
+                </>
+              }
+              breakLabel={"..."}
+              // breakClassName={"break-me"}
+              pageCount={pageCount}
+              marginPagesDisplayed={4}
+              pageRangeDisplayed={3}
+              onPageChange={handlePageClick}
+              containerClassName={
+                "border-t border-gray-200 px-4 m-4 flex items-center justify-between sm:px-0"
+              }
+              previousClassName={"-mt-px w-0 flex-1 flex"}
+              previousLinkClassName={
+                "border-t-2 border-transparent pt-4 pr-1 inline-flex items-center text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              }
+              pageClassName={"hidden md:-mt-px md:flex"}
+              pageLinkClassName={
+                "border-transparent text-gray-500 hover:text-indigo-600 hover:border-indigo-300 border-t-2 pt-4 px-4 inline-flex items-center text-sm font-medium"
+              }
+              nextClassName={"-mt-px w-0 flex-1 flex justify-end"}
+              nextLinkClassName={
+                "border-t-2 border-transparent pt-4 pl-1 inline-flex items-center text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              }
+              activeLinkClassName={
+                "border-indigo-500 text-indigo-700 border-t-2 pt-4 px-4 inline-flex items-center text-sm font-medium"
+              }
+            />
           )}
         </div>
       </Layout>

@@ -13,11 +13,13 @@ import "react-activity/dist/Digital.css";
 const NUEVO_CLIENTE = gql`
   mutation nuevoCliente($input: ClienteInput) {
     nuevoCliente(input: $input) {
+      id
       nombre
       apellido
       empresa
-      empresa
+      email
       telefono
+      vendedor
     }
   }
 `;
