@@ -4,7 +4,10 @@ import { gql, useMutation } from "@apollo/client";
 import { useRouter } from "next/router"; //este permite pasar parametros en la url
 const ELIMINAR_CLIENTE = gql`
   mutation eliminarCliente($id: ID!) {
-    eliminarCliente(id: $id)
+    eliminarCliente(id: $id) {
+      eliminado
+      mensaje
+    }
   }
 `;
 const OBTENER_CLIENTES_USUARIO = gql`
@@ -24,23 +27,26 @@ export default function Cliente({ cliente, clienteIdx }) {
   const router = useRouter();
 
   const [eliminarCliente] = useMutation(ELIMINAR_CLIENTE, {
-    update(cache) {
-      //obtener una copia del objeto del cache
-      const { obtenerClientesVendedor } = cache.readQuery({
-        query: OBTENER_CLIENTES_USUARIO,
-      });
+    update(cache, { data: { eliminarCliente } }) {
+      //Solo si el cliente es eliminado
+      if (eliminarCliente.eliminado === 1) {
+        //obtener una copia del objeto del cache
+        const { obtenerClientesVendedor } = cache.readQuery({
+          query: OBTENER_CLIENTES_USUARIO,
+        });
 
-      cache.evict({ broadcast: false });
+        cache.evict({ broadcast: false });
 
-      //Reescrinir el Cache
-      cache.writeQuery({
-        query: OBTENER_CLIENTES_USUARIO,
-        data: {
-          obtenerClientesVendedor: obtenerClientesVendedor.filter(
-            (clienteActual) => clienteActual.id !== id
-          ),
-        },
-      });
+        //Reescrinir el Cache
+        cache.writeQuery({
+          query: OBTENER_CLIENTES_USUARIO,
+          data: {
+            obtenerClientesVendedor: obtenerClientesVendedor.filter(
+              (clienteActual) => clienteActual.id !== id
+            ),
+          },
+        });
+      }
     },
   });
 
@@ -65,9 +71,13 @@ export default function Cliente({ cliente, clienteIdx }) {
             },
           });
 
-          //console.log(data);
-
-          Swal.fire("Eliminado!", data.eliminarCliente, "success");
+          Swal.fire(
+            data.eliminarCliente.eliminado === 1
+              ? "Eliminado!"
+              : "Información!",
+            data.eliminarCliente.mensaje,
+            data.eliminarCliente.eliminado === 1 ? "success" : "info"
+          );
         } catch (error) {
           console.log(error);
         }

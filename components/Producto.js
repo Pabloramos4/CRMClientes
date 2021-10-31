@@ -2,9 +2,13 @@ import React from "react";
 import Swal from "sweetalert2";
 import { gql, useMutation } from "@apollo/client";
 import { useRouter } from "next/router"; //este permite pasar parametros en la url
+import Moment from "react-moment";
 const ELIMINAR_PRODUCTO = gql`
   mutation eliminarProducto($id: ID!) {
-    eliminarProducto(id: $id)
+    eliminarProducto(id: $id) {
+      eliminado
+      mensaje
+    }
   }
 `;
 const OBTENER_PRODUCTOS = gql`
@@ -22,21 +26,24 @@ const OBTENER_PRODUCTOS = gql`
 export default function Producto({ producto, productoIdx }) {
   const router = useRouter();
   const [eliminarProducto] = useMutation(ELIMINAR_PRODUCTO, {
-    update(cache) {
-      //obtener una copia del objeto del cache
-      const { obtenerProductos } = cache.readQuery({
-        query: OBTENER_PRODUCTOS,
-      });
+    update(cache, { data: { eliminarProducto } }) {
+      //Solo si el cliente es eliminado
+      if (eliminarProducto.eliminado === 1) {
+        //obtener una copia del objeto del cache
+        const { obtenerProductos } = cache.readQuery({
+          query: OBTENER_PRODUCTOS,
+        });
 
-      //Reescrinir el Cache
-      cache.writeQuery({
-        query: OBTENER_PRODUCTOS,
-        data: {
-          obtenerProductos: obtenerProductos.filter(
-            (productoActual) => productoActual.id !== id
-          ),
-        },
-      });
+        //Reescrinir el Cache
+        cache.writeQuery({
+          query: OBTENER_PRODUCTOS,
+          data: {
+            obtenerProductos: obtenerProductos.filter(
+              (productoActual) => productoActual.id !== id
+            ),
+          },
+        });
+      }
     },
   });
 
@@ -61,9 +68,13 @@ export default function Producto({ producto, productoIdx }) {
             },
           });
 
-          //console.log(data);
-
-          Swal.fire("Eliminado!", data.eliminarProducto, "success");
+          Swal.fire(
+            data.eliminarProducto.eliminado === 1
+              ? "Eliminado!"
+              : "Información!",
+            data.eliminarProducto.mensaje,
+            data.eliminarProducto.eliminado === 1 ? "success" : "info"
+          );
         } catch (error) {
           console.log(error);
         }
@@ -89,7 +100,7 @@ export default function Producto({ producto, productoIdx }) {
         {existencia} Piezas
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-        {creado}
+        <Moment format="DD/MM/YYYY">{new Date(parseInt(creado))}</Moment>
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
         <a

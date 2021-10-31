@@ -30,7 +30,6 @@ export default function Sidebar({
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  console.log("datossss", dataUser);
   //Proteger que no acceda a data antes de tener los resultados
   if (loadingUser) {
     return (

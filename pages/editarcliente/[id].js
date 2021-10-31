@@ -9,6 +9,7 @@ import MensajeAlert from "../../components/MensajeAlert";
 import { Digital } from "react-activity";
 import "react-activity/dist/Digital.css";
 import { Formik } from "formik";
+import MaskedInput from "@biproxi/react-text-mask";
 
 const OBTENER_CLIENTE = gql`
   query obtenerCliente($id: ID!) {
@@ -328,7 +329,33 @@ export default function EditarCliente() {
                         Telefono
                       </label>
                       <div className="mt-1">
-                        <input
+                        {/* <input
+                          id="telefono"
+                          name="telefono"
+                          type="tel"
+                          className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                          value={props.values.telefono}
+                          onChange={props.handleChange}
+                          onBlur={props.handleBlur}
+                        /> */}
+
+                        <MaskedInput
+                          mask={[
+                            "(",
+                            /[1-9]/,
+                            /\d/,
+                            /\d/,
+                            ")",
+                            " ",
+                            /\d/,
+                            /\d/,
+                            /\d/,
+                            "-",
+                            /\d/,
+                            /\d/,
+                            /\d/,
+                            /\d/,
+                          ]}
                           id="telefono"
                           name="telefono"
                           type="tel"
